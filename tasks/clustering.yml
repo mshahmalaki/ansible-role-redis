@@ -1,0 +1,87 @@
+---
+- name: Clustering | Check if redis cluster already created
+  stat: 
+    path: /var/lib/redis/redis-cluster.created
+  register: redis_cluster_status
+
+- name: Clustering | Create redis cluster
+  block:
+    - name: Clustering | Get all ip address in group
+      set_fact:
+        redis_cluster_ip_address_list: "{{ groups[hostvars[inventory_hostname].group_names[-1]] | map('extract', hostvars, ['ansible_default_ipv4', 'address']) | list }}"
+
+    - name: Show redis_cluster_ip_address_list
+      debug:
+        msg: "{{ redis_cluster_ip_address_list }}"
+
+    - name: Clustering | Set redis_cluster_master_ip_address_list
+      set_fact:
+        redis_cluster_master_ip_address_list: ""
+
+    - name: Clustering | Get all ip address with redis_role="master" in group
+      set_fact:
+        redis_cluster_master_ip_address_list: "{{ redis_cluster_master_ip_address_list + hostvars[master_item]['ansible_default_ipv4']['address'] + ':' + redis_cluster_conf.master_port + ' ' }}"
+      # with_items: "{{ groups[hostvars[inventory_hostname].group_names[-1]] }}"
+      loop: "{{ ansible_play_hosts_all }}"
+      loop_control:
+        loop_var: master_item
+      when:
+        - hostvars[master_item].redis_role == "master"
+
+    - name: Show redis_cluster_master_ip_address_list
+      debug:
+        msg: "{{ redis_cluster_master_ip_address_list }}"
+
+    - name: Clustering | Set redis_cluster_slave_ip_address_list
+      set_fact:
+        redis_cluster_slave_ip_address_list: ""
+
+    - name: Clustering | Get all ip address with redis_role="slave" in group
+      set_fact:
+        redis_cluster_slave_ip_address_list: "{{ redis_cluster_slave_ip_address_list + hostvars[slave_item]['ansible_default_ipv4']['address'] + ':' + redis_cluster_conf.slave_port + ' ' }}"
+      # with_items: "{{ groups[hostvars[inventory_hostname].group_names[-1]] }}"
+      loop: "{{ ansible_play_hosts_all }}"
+      loop_control:
+        loop_var: slave_item
+      when:
+        - hostvars[slave_item].redis_role == "slave"
+
+    - name: Show redis_cluster_slave_ip_address_list
+      debug:
+        msg: "{{ redis_cluster_slave_ip_address_list }}"
+
+    - name: Clustering | Check redis_cluster_ip_address_list length
+      assert:
+        that:
+          # - (redis_cluster_ip_address_list | length | int) % 2 == 0 and redis_cluster_replica > 0
+          - ansible_play_hosts_all | length % 2 == 0 and redis_cluster_replica > 0
+        fail_msg: "Cannot create redis cluster due to the_number_of_instances % 2 = 1. The_number_of_instances must even."
+        success_msg: "look good"
+      register: check_redis_cluster_length
+
+    - block:
+      - name: Clustering | I will run this command bellow to create redis cluster
+        debug:
+          msg: "printf 'yes' | redis-cli --cluster create {{ redis_cluster_master_ip_address_list + redis_cluster_slave_ip_address_list }}--cluster-replicas {{ redis_cluster_replica }} {{ '-a ' + redis_cluster_conf.requirepass if redis_cluster_conf.requirepass is defined }}"
+
+      - name: Clustering | Create redis cluster via redis-cli
+        shell: "printf 'yes' | redis-cli --cluster create {{ redis_cluster_master_ip_address_list + redis_cluster_slave_ip_address_list }}--cluster-replicas {{ redis_cluster_replica }} {{ '-a ' + redis_cluster_conf.requirepass if redis_cluster_conf.requirepass is defined }}"
+        args:
+          creates: /var/lib/redis/redis-cluster.created
+        run_once: True
+        register: redis_cluster_created
+
+      - name: Clustering | Make created file if redis cluster is created
+        file:
+          path: /var/lib/redis/redis-cluster.created
+          state: touch
+          owner: redis
+          group: redis
+          mode: 0750
+        when: redis_cluster_created is defined and "All 16384 slots covered." in redis_cluster_created.stdout
+
+      when: '"look good" in check_redis_cluster_length.msg'
+
+  when:
+    - redis_cluster_status.stat.exists == False
+    - inventory_hostname ==  groups[hostvars[inventory_hostname].group_names[-1]][0]

@@ -1,0 +1,22 @@
+galaxy_info:
+  author: Mohammad Shahmaleki
+  namespace: mshahmalaki
+  description: Ansible role to provision and install Redis nodes and/or clusters
+  license: MIT
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+  galaxy_tags:
+    - redis
+    - clustering
+
+collections: []
+
+dependencies: []

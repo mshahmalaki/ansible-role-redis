@@ -1,0 +1,16 @@
+---
+- name: Config | Apply config files /etc/redis/redis.conf
+  template:
+    src: etc/redis/redis.conf.j2
+    dest: /etc/redis/redis.conf
+    mode: 0640
+    owner: redis
+    group: redis
+  notify: Warning file /etc/redis/redis.conf has been changed
+
+- name: Config | Ensures redis-server service is started and enabled
+  systemd:
+    name: redis-server
+    daemon_reload: True
+    enabled: True
+    state: started

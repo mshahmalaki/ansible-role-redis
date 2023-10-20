@@ -1,0 +1,34 @@
+---
+######### install options
+redis__prerequisite_packages:
+  - lsb-release
+  - curl
+  - gpg
+
+redis__version: 6.2.14
+
+# setting to true skips 'disable-transparent-huge-pages' service which won't work on unprivileged containers (e.g. on LXC)
+unprivileged_container: false
+
+######### Systemd limit
+systemd_services:
+  redis:
+    LimitFSIZE: 'infinity'
+    LimitCPU: 'infinity'
+    LimitAS: 'infinity'
+    LimitNOFILE: 2000000
+    LimitNPROC: 2000000
+
+######### redis config
+redis_cluster_replica: 1
+redis_cluster_conf:
+  cluster_enabled: "yes"
+  master_port: "6379"
+  slave_port: "6379"
+  requirepass: changeme
+  maxmemory: "1gb"
+  rename_commands:
+    - FLUSHDB
+    - FLUSHALL
+    - KEYS
+    - SHUTDOWN

@@ -1,0 +1,69 @@
+---
+- name: Install | Check if Redis already installed
+  stat:
+    path: /usr/bin/redis-server
+  register: redis_bin
+
+- name: Install | Install package requirements
+  apt:
+    name: "{{ redis__prerequisite_packages }}"
+    state: present
+    update_cache: yes
+    cache_valid_time: 3600
+  register: result
+  until: result is successful
+  retries: 10
+  delay: 30
+
+- name: Install | Install Redis
+  block:
+    - name: Install | Get Redis signing key
+      apt_key:
+        url: https://packages.redis.io/gpg
+        keyring: /usr/share/keyrings/redis-archive-keyring.gpg
+      register: result
+      until: result is successful
+      retries: 10
+      delay: 30
+
+    - name: Install | Add Redis repository
+      template:
+        src: etc/apt/source.list.d/redis.list.j2
+        dest: /etc/apt/sources.list.d/redis.list
+
+    - name: Install | Update apt packages
+      apt:
+        update_cache: yes
+
+    - name: Install | Get excat package version
+      command:
+        cmd: apt list --all-versions redis
+      register: redis_versions
+    
+    - name: Install | Show available Redis version
+      debug:
+        msg: "{{ redis_versions }}"
+
+    - name: Install | Set Redis version
+      set_fact:
+        redis_version: "{{ redis_versions.stdout_lines | list | regex_search('\\d:'+redis__version+'.*') | split(' ') | first() }}"
+        
+    - name: Install | Show suitable Redis version
+      debug:
+        msg: "{{ redis_version }}"
+
+    - name: Install | Install Redis package
+      apt:
+        name: "{{ item }}={{ redis_version }}"
+        state: present
+      with_items:
+        - redis-tools
+        - redis-server
+        - redis
+      register: result
+      until: result is successful
+      retries: 10
+      delay: 30
+    
+
+  when: redis_bin.stat.exists == False

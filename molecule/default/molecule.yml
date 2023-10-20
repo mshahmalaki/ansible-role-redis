@@ -1,0 +1,143 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: docker
+lint: |
+  set -e
+  yamllint .
+  ansible-lint
+platforms:
+  - name: redis01
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2204}-ansible:latest"
+    exposed_ports:
+      - 6379
+    published_ports:
+      - 6379:6379
+    groups:
+      - redis-masters
+    privileged: true
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - name: redis
+  - name: redis02
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2004}-ansible:latest"
+    exposed_ports:
+      - 6379
+    published_ports:
+      - 6380:6379
+    groups:
+      - redis-masters
+    privileged: true
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - name: redis
+  - name: redis03
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-debian12}-ansible:latest"
+    exposed_ports:
+      - 6379
+    published_ports:
+      - 6381:6379
+    groups:
+      - redis-masters
+    privileged: true
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - name: redis
+  - name: redis04
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-debian11}-ansible:latest"
+    exposed_ports:
+      - 6379
+    published_ports:
+      - 6382:6379
+    groups:
+      - redis-replicas
+    privileged: true
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - name: redis
+  - name: redis05
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2204}-ansible:latest"
+    exposed_ports:
+      - 6379
+    published_ports:
+      - 6383:6379
+    groups:
+      - redis-replicas
+    privileged: true
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - name: redis
+  - name: redis06
+    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2204}-ansible:latest"
+    exposed_ports:
+      - 6379
+    published_ports:
+      - 6384:6379
+    groups:
+      - redis-replicas
+    privileged: true
+    pre_build_image: true
+    command: /lib/systemd/systemd
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    networks:
+      - name: redis
+provisioner:
+  name: ansible
+  log: true
+  config_options:
+    defaults:
+      deprecation_warnings: false
+      callback_whitelist: timer,profile_tasks
+      fact_caching: jsonfile
+      fact_caching_connection: ./cache
+      forks: 6
+      remote_tmp: /tmp/.ansible
+    connection:
+      pipelining: true
+  inventory:
+    group_vars:
+      redis-masters:
+        redis_role: master
+      redis-replicas:
+        redis_role: slave
+  playbooks:
+    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+verifier:
+  name: ansible

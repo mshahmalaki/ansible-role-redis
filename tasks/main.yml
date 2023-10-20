@@ -1,0 +1,28 @@
+---
+- import_tasks: install.yml
+  tags:
+    - install
+
+- import_tasks: systemd-resource-limit.yml
+  tags:
+    - systemd_resource_limit
+
+- import_tasks: os-tweaks.yml
+  tags:
+    - tweaks
+
+- import_tasks: config.yml
+  tags:
+    - config
+
+- import_tasks: clustering.yml
+  tags:
+    - cluster
+
+# - import_tasks: haproxy.yml
+#   tags:
+#     - haproxy
+
+# - import_tasks: keepalived.yml
+#   tags:
+#     - keepalived

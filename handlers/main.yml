@@ -1,0 +1,11 @@
+---
+- name: restart redis
+  systemd:
+    name: redis-server
+    daemon_reload: True
+    enabled: True
+    state: restarted
+
+- name: Warning file /etc/redis/redis.conf has been changed
+  debug:
+    msg: "Warning: file /etc/redis/redis.conf has been changed. Please review your change before restart redis."

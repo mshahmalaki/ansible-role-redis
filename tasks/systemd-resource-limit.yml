@@ -1,0 +1,18 @@
+---
+- name: Systemd Resource Limit | Create a directory for the systemd service modification
+  file:
+    path: '/usr/lib/systemd/system/redis-server.service.d'
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Systemd Resource Limit | Update Redis systemd resource limit
+  template:
+    src: systemd/custom.conf.j2
+    dest: '/usr/lib/systemd/system/redis-server.service.d/custom.conf'
+    owner: root
+    group: root
+    mode: 0644
+  with_dict: '{{ systemd_services }}'
+  notify: restart redis

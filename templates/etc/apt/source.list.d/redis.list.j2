@@ -1,0 +1,7 @@
+{% if ansible_distribution | lower == 'ubuntu' %}
+deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb {{ ansible_distribution_release }} main
+{% elif ansible_distribution | lower == 'debian' and ansible_distribution_release | lower == 'bullseye' %}
+deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb focal main
+{% elif ansible_distribution | lower == 'debian' and ansible_distribution_release | lower == 'bookworm' %}
+deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb jammy main
+{% endif %}

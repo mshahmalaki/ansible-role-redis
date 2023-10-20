@@ -14,8 +14,8 @@ Categorize target servers with 3 categories in inventory file:
 
 | Group | Description |
 |:-------|:------------|
-|**redis-masters**|first node|
-|**redis-replicas**|other nodes|
+|**redis-masters**|master nodes|
+|**redis-replicas**|replica nodes|
 |**redis-cluster**|parent of 2 above groups|
 
 For example: **inventory.ini**

@@ -46,6 +46,7 @@ min-slaves-max-lag {{ redis_cluster_conf.min_slaves_max_lag | default('20') }}
 ################################## SECURITY ###################################
 {% if redis_cluster_conf.requirepass is defined %}
 requirepass {{ redis_cluster_conf.requirepass }}
+masterauth {{ redis_cluster_conf.requirepass }}
 {% endif %}
 {% if redis_cluster_conf.rename_commands is defined %}
 {% for command in redis_cluster_conf.rename_commands -%}
